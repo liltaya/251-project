@@ -24,9 +24,9 @@ const std::string& Player::getName() const
 }
 
 // checks hand size to verify draw or play options
-int Player::getHandSize() const
+std::size_t Player::getHandSize() const
 {
-    return static_cast<int>(hand.size());
+    return hand.size();
 }
 
 bool Player::hasCards() const

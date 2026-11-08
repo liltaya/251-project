@@ -57,9 +57,6 @@ class Player
 {
 private:
     std::string name;
-    // for Game Class:
-    //      Player player1("Player 1");
-    //      Player player2("Player 2");
 
     // player's hand
     std::vector<Card> hand;
@@ -74,11 +71,11 @@ public:
     // makes player object
     explicit Player(const std::string& playerName);
 
-    // checks if player 1 or 2
+    // returns player's name
     const std::string& getName() const;
 
     // gets hand size
-    int getHandSize() const;
+    std::size_t getHandSize() const;
 
     // true if player has cards
     bool hasCards() const;
@@ -106,7 +103,7 @@ public:
     // view player's components' HP
     int getTotalHP() const;
 
-    // true is player's componets are destroyed (HP = 0)
+    // true if player's componets are destroyed (HP = 0)
     bool isSystemDestroyed() const;
 };
 
