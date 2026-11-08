@@ -2,7 +2,7 @@
  * 
  * public functions used:
  * 
- *  from ComponentStatus Class:
+ *  from System Class:
  *    int getTotalHP() const;
  *    bool isSystemDestroyed() const;
  * 
@@ -51,7 +51,7 @@
 #include <vector>
 
 #include "card.hpp"
-#include "componentstatus.hpp"
+#include "system.hpp"
 
 class Player
 {
@@ -65,7 +65,7 @@ private:
     std::vector<Card> hand;
 
     // player's components
-    ComponentStatus system;
+    System system;
 
     // hand size validation
     static constexpr std::size_t MAX_HAND_SIZE = 5;
@@ -98,10 +98,10 @@ public:
     bool removeCard(int cardIndex, Card& removedCard);
 
     // Game class can modify player's components
-    ComponentStatus& getSystem();
+    System& getSystem();
 
     // view player's components
-    const ComponentStatus& getSystem() const;
+    const System& getSystem() const;
 
     // view player's components' HP
     int getTotalHP() const;

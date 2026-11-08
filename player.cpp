@@ -72,12 +72,12 @@ bool Player::removeCard(int cardIndex, Card& removedCard)
     return true;
 }
 
-ComponentStatus& Player::getSystem()
+System& Player::getSystem()
 {
     return system;
 }
 
-const ComponentStatus& Player::getSystem() const
+const System& Player::getSystem() const
 {
     return system;
 }

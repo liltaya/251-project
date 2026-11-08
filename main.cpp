@@ -28,7 +28,7 @@
  *  
  *  main()
  *                          Player(2) ---->   Card
- *             Game ---->   Deck              ComponentStatus ---->  StatusChange(4)
+ *             Game ---->   Deck              System ---->  Component(4)
  *                  b       Card
  *                          GameUI
  * 
