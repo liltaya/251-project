@@ -14,7 +14,6 @@
 #include "player.hpp"
 
 // hand starts empty
-// assumes Deck class deals 5 starting cards
 // assumes ComponentStatus initializes 4 components
 Player::Player(const std::string& playerName) : name(playerName) {}
 
