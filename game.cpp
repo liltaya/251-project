@@ -247,7 +247,7 @@ void Game::playTurn() { //handle current player's turn
     }
 
     if (choice == 1) { //player chooses to draw
-        if (drawCard()) { //attempt to draw
+        if (addCard()) { //attempt to draw
             ui.displayMessage("Card drawn successfully."); //confirm
             nextTurn(); //finish turn
         }
@@ -262,7 +262,7 @@ void Game::playTurn() { //handle current player's turn
         int cardIndex =
             ui.getCardChoice(player.getHandSize()); //select card
 
-        if (playCard(cardIndex)) { //attempt to play card
+        if (removeCard(cardIndex)) { //attempt to play card
             ui.displayMessage("Card played successfully."); //confirm
             nextTurn(); //finish turn
         }
