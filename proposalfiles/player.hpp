@@ -24,13 +24,14 @@
 class Player
 {
 private:
+    // player's name
     std::string name;
 
-    // player's hand (vector of Card objects)
+    // player's hand
     std::vector<Card> hand;
 
-    // player's components
-    System system;
+    // player's system of components
+    ComponentStatus system;
 
     // hand size validation
     static constexpr std::size_t MAX_HAND_SIZE = 5;
