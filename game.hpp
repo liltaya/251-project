@@ -24,7 +24,7 @@ enum class GameResult { //store possible game results
 
 class Game {
 private:
-    Player player1; //store first player
+    Player player1; //stores first player
     Player player2; //store second player
     Deck deck; //store game deck
     GameUI& ui; //store reference to game interface
@@ -50,8 +50,8 @@ public:
     Player& getPlayer(int playerNumber); //get selected player
     Deck& getDeck(); //get game deck
 
-    bool drawCard(); //draw card from deck
-    bool playCard(int cardIndex); //play selected card
+    bool addCard(); //draw card from deck
+    bool removeCard(int cardIndex); //play selected card
     void nextTurn(); //switch players
 
     bool isGameOver() const; //check if game ended
