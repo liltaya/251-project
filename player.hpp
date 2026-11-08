@@ -56,13 +56,14 @@
 class Player
 {
 private:
+    // player's name
     std::string name;
 
     // player's hand
     std::vector<Card> hand;
 
-    // player's components
-    System system;
+    // player's system of components
+    ComponentStatus system;
 
     // hand size validation
     static constexpr std::size_t MAX_HAND_SIZE = 5;
@@ -89,9 +90,9 @@ public:
     // adds card if player's hand ≠ 5
     bool addCard(const Card& newCard);
 
-    // plays card and removes from hand
-    //    false = hand is empty
-    //    false = cardIndex is invalid
+    // true = plays card and removes from hand
+    //      false = hand is empty (0/5)
+    //      false = cardIndex is invalid
     bool removeCard(int cardIndex, Card& removedCard);
 
     // Game class can modify player's components
@@ -103,8 +104,10 @@ public:
     // view player's components' HP
     int getTotalHP() const;
 
-    // true if player's componets are destroyed (HP = 0)
+    // true = all player's components are destroyed (HP = 0)
+    // false = any component's HP > 0
     bool isSystemDestroyed() const;
 };
 
 #endif
+
