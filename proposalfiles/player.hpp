@@ -1,35 +1,3 @@
-/************************************************************************************************
- * 
- * public functions used:
- * 
- *  from System Class:
- *    int getTotalHP() const;
- *    bool isSystemDestroyed() const;
- * 
- *    variables:
- *     system
- * 
- *  from Card Class:
- *    addCard()	     
- *    removeCard()
- * 
- *    variables:
- *      newcard
- *      removedcard
- *      cardIndex
- * 	 
- * public functions avalilable for use:
- *      getName()	      	Get the player's name.
- *      getHandSize()	    Check the number of cards in the hand.
- *      hasCards()	        Check whether the player has cards.
- *      isHandFull()	    Check whether the hand contains 5 cards.
- *      getHand()	        Access the cards in the hand.
- *      getSystem()	        Access the player's component system.
- * 
-********************************************************************************************/
-
-// ---------------------------------------------------------------------------------------------------
-
 /*****************************************************************
  * Simon Fraser University
  * ENSC 251 - Software Design and Analysis for Engineers
