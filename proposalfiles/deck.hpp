@@ -19,7 +19,7 @@ public:
     void shuffle(); // randomize order of cards in deck
     bool isEmpty() const; // checks if deck is empty
     int cardsRemaining() const; // how many cards are left
-    bool drawCard(Player& player); // draws a card from deck
+    bool drawCard(Player& player); // draws a card from deck and calls player to add to hands
     void discardCard(const Card& card); // puts a card in the discard pile (ex. after a play)
 };
 
