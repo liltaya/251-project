@@ -72,12 +72,12 @@ bool Player::removeCard(int cardIndex, Card& removedCard)
     return true;
 }
 
-System& Player::getSystem()
+ComputerSystem& Player::getSystem()
 {
     return system;
 }
 
-const System& Player::getSystem() const
+const ComputerSystem& Player::getSystem() const
 {
     return system;
 }
@@ -93,3 +93,4 @@ bool Player::isSystemDestroyed() const
     // checks if component is destroyed (HP = 0)
     return system.isSystemDestroyed();
 }
+
