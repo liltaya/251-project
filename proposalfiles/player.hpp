@@ -19,7 +19,7 @@
 #include <vector>
 
 #include "card.hpp"
-#include "system.hpp"
+#include "componentsystem.hpp"
 
 class Player
 {
@@ -64,10 +64,10 @@ public:
     bool removeCard(int cardIndex, Card& removedCard);
 
     // Game class can modify player's components
-    System& getSystem();
+    ComputerSystem& getSystem();
 
     // view player's components
-    const System& getSystem() const;
+    const ComputerSystem& getSystem() const;
 
     // view player's components' HP
     int getTotalHP() const;
@@ -75,6 +75,9 @@ public:
     // true = all player's components are destroyed (HP = 0)
     // false = any component's HP > 0
     bool isSystemDestroyed() const;
+};
+
+#endif
 };
 
 #endif
