@@ -42,7 +42,6 @@
  * Author: Vijeta Dhalla, 301644330
  * 
 *******************************************************************/
-
 #ifndef PLAYER_HPP
 #define PLAYER_HPP
 
@@ -51,7 +50,7 @@
 #include <vector>
 
 #include "card.hpp"
-#include "system.hpp"
+#include "componentsystem.hpp"
 
 class Player
 {
@@ -96,10 +95,10 @@ public:
     bool removeCard(int cardIndex, Card& removedCard);
 
     // Game class can modify player's components
-    System& getSystem();
+    ComputerSystem& getSystem();
 
     // view player's components
-    const System& getSystem() const;
+    const ComputerSystem& getSystem() const;
 
     // view player's components' HP
     int getTotalHP() const;
