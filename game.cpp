@@ -5,7 +5,10 @@
 
 #include "game.hpp" //include Game class
 #include "gameui.hpp" //include GameUI class
+#include "computersystem.hpp" //include ComputerSystem class
+#include "component.hpp" //include Component class
 #include <stdexcept> //for reporting errors
+#include <string> //for messages
 
 using namespace std;
 
@@ -20,7 +23,8 @@ Game::Game(
       currentPlayer(1), //first player starts
       gameOver(false), //game is not finished
       winner(""), //no winner yet
-      turnsCompleted(0) //no turns completed
+      turnsCompleted(0), //no turns completed
+      finalResult(GameResult::Draw) //default result
 {
 }
 
@@ -48,22 +52,22 @@ Deck& Game::getDeck() { //get game deck
     return deck; //return deck reference
 }
 
-bool Game::drawCard() { //draw one card
-    if (gameOver) { //check if game ended
+bool Game::addCard() { //draw one card
+    if (gameOver) { //check game status
         return false; //cannot draw after game ends
     }
 
-    if (getCurrentPlayer().isHandFull()) { //check hand limit
-        return false; //maximum 5 cards in hand
+    Player& player = getCurrentPlayer(); //get current player
+
+    if (player.isHandFull()) { //check hand limit
+        return false; //maximum 5 cards
     }
 
     if (deck.isEmpty()) { //check remaining cards
         return false; //deck has no cards
     }
 
-    Card card = deck.drawTopCard(); //take top card
-
-    return getCurrentPlayer().addCard(card); //add card to hand
+    return deck.drawCard(player); //draw card into hand
 }
 
 bool Game::isValidMove(int cardIndex) { //check selected card
@@ -77,75 +81,175 @@ bool Game::isValidMove(int cardIndex) { //check selected card
         return false; //invalid card index
     }
 
-    if (cardIndex >= player.getHandSize()) { //check hand size
+    if (static_cast<size_t>(cardIndex) >=
+        player.getHandSize()) { //check hand size
         return false; //card is not in hand
     }
 
-    const Card& card = player.getHand().at(cardIndex); //get card
+    const Card& card =
+        player.getHand().at(cardIndex); //get selected card
 
-    //TODO: find component matching card suit
-    //TODO: identify attack, healing, or shield card
-    //TODO: check if the target component is destroyed
-    //TODO: reject a move when its target is invalid
+    if (card.getSuit() < 0 ||
+        card.getSuit() > 3) { //check card suit
+        return false; //invalid suit
+    }
 
-    //requires Card and System component interfaces
-    (void)card; //avoid unused variable warning
+    int rank = card.getRank(); //get card rank
 
-    return true; //card index is valid
+    if (rank < 1 || rank > 14) { //check valid rank range
+        return false; //invalid rank
+    }
+
+    return true; //selected card is valid
 }
 
 void Game::applyCardEffect(const Card& card) { //apply card effect
 
-    //TODO: find component matching card suit
-    //TODO: use opponent component for attack cards
-    //TODO: use current player component for healing and shields
+    int suit = card.getSuit(); //get target component
+    int rank = card.getRank(); //get card rank
 
-    //cards 2-10 deal damage equal to card rank
-    //Jack restores 2 HP to own component
-    //Queen restores 4 HP to own component
-    //King restores 6 HP to own component
-    //Ace activates shield for one turn
+    Player& current = getCurrentPlayer(); //get active player
 
-    //TODO: use actual Card, System, and Component methods
-    (void)card; //avoid unused variable warning
+    Player& opponent =
+        currentPlayer == 1 ? player2 : player1; //get opponent
 
-    throw logic_error(
-        "Card effects are not integrated yet"
-    ); //prevent playing a card without applying its effect
+    if (rank >= 2 && rank <= 10) { //check attack card
+
+        Component& target =
+            opponent.getSystem().getComponent(suit); //opponent component
+
+        if (target.isDestroyed()) { //check destroyed component
+            ui.displayMessage(
+                "Component already destroyed. Card discarded."
+            ); //show no effect
+            return; //finish effect
+        }
+
+        if (target.isShielded()) { //check active shield
+            ui.displayMessage(
+                "Firewall blocked the attack."
+            ); //show blocked attack
+            return; //no damage
+        }
+
+        int damage = target.takeDamage(rank); //apply damage
+
+        ui.displayMessage(
+            opponent.getName() + "'s " +
+            target.getName() + " takes " +
+            to_string(damage) + " damage."
+        ); //show attack result
+
+        if (target.isDestroyed()) { //check component HP
+            ui.displayMessage(
+                target.getName() + " has been destroyed."
+            ); //show destruction
+        }
+
+        return; //finish attack
+    }
+
+    if (rank >= 11 && rank <= 13) { //check healing card
+
+        Component& target =
+            current.getSystem().getComponent(suit); //own component
+
+        int healing = 0; //healing amount
+
+        if (rank == 11) { //Jack card
+            healing = 2; //restore 2 HP
+        }
+        else if (rank == 12) { //Queen card
+            healing = 4; //restore 4 HP
+        }
+        else { //King card
+            healing = 6; //restore 6 HP
+        }
+
+        if (target.isDestroyed()) { //check destroyed component
+            ui.displayMessage(
+                "Destroyed components cannot be healed."
+            ); //show no effect
+            return; //finish effect
+        }
+
+        int restored = target.heal(healing); //restore health
+
+        ui.displayMessage(
+            current.getName() + "'s " +
+            target.getName() + " recovers " +
+            to_string(restored) + " HP."
+        ); //show healing result
+
+        return; //finish healing
+    }
+
+    if (rank == 1 || rank == 14) { //check Ace card
+
+        Component& target =
+            current.getSystem().getComponent(suit); //own component
+
+        if (target.isDestroyed()) { //check destroyed component
+            ui.displayMessage(
+                "Destroyed components cannot be shielded."
+            ); //show no effect
+            return; //finish effect
+        }
+
+        if (target.isShielded()) { //check existing shield
+            ui.displayMessage(
+                "Firewall already active."
+            ); //shield does not stack
+            return; //finish effect
+        }
+
+        target.activateShield(); //activate firewall
+
+        ui.displayMessage(
+            "Firewall activated on " +
+            target.getName() + "."
+        ); //show shield result
+
+        return; //finish shield effect
+    }
+
+    throw logic_error("Invalid card rank"); //reject invalid card
 }
 
-bool Game::playCard(int cardIndex) { //play selected card
+bool Game::removeCard(int cardIndex) { //play selected card
+
     if (!isValidMove(cardIndex)) { //check selected move
         return false; //reject invalid move
     }
 
-    Player& player = getCurrentPlayer(); //get current player
+    Player& player = getCurrentPlayer(); //get active player
 
-    Card card = player.getHand().at(cardIndex); //copy card
+    Card card =
+        player.getHand().at(cardIndex); //copy selected card
 
-    applyCardEffect(card); //apply card effect before removal
+    Card removedCard = card; //store card to discard
 
-    Card removedCard = card; //store removed card
-
-    if (!player.removeCard(cardIndex, removedCard)) { //remove card
+    if (!player.removeCard(cardIndex, removedCard)) { //remove from hand
         return false; //card removal failed
     }
 
     deck.discardCard(removedCard); //move card to discard pile
+
+    applyCardEffect(card); //apply selected card effect
 
     return true; //card played successfully
 }
 
 void Game::removeExpiredShields() { //remove expired shields
 
-    //TODO: check current player's components
-    //TODO: find shields activated during previous turn
-    //TODO: remove expired shields at start of owner's turn
-
-    //requires System and Component interfaces
+    getCurrentPlayer().getSystem().removeAllShields(); //clear own shields
 }
 
 void Game::checkWinner() { //check if game ended
+
+    if (turnsCompleted % 2 != 0) { //check complete round
+        return; //wait until both players finish
+    }
 
     bool player1Destroyed =
         player1.isSystemDestroyed(); //check first system
@@ -155,34 +259,46 @@ void Game::checkWinner() { //check if game ended
 
     if (player1Destroyed && player2Destroyed) { //both destroyed
         winner = "Draw"; //game ends in draw
+        finalResult = GameResult::Draw; //store result
         gameOver = true; //finish game
         return; //stop checking
     }
 
     if (player1Destroyed) { //first system destroyed
         winner = player2.getName(); //second player wins
+        finalResult = GameResult::Player2Win; //store result
         gameOver = true; //finish game
         return; //stop checking
     }
 
     if (player2Destroyed) { //second system destroyed
         winner = player1.getName(); //first player wins
+        finalResult = GameResult::Player1Win; //store result
         gameOver = true; //finish game
         return; //stop checking
     }
 
-    if (deck.isEmpty()) { //check empty deck
+    bool noCardsRemaining =
+        deck.isEmpty() && //check empty deck
+        !player1.hasCards() && //check first hand
+        !player2.hasCards(); //check second hand
+
+    if (noCardsRemaining) { //all cards have been used
+
         int hp1 = player1.getTotalHP(); //first player HP
         int hp2 = player2.getTotalHP(); //second player HP
 
         if (hp1 > hp2) { //first player has more HP
             winner = player1.getName(); //first player wins
+            finalResult = GameResult::Player1Win; //store result
         }
         else if (hp2 > hp1) { //second player has more HP
             winner = player2.getName(); //second player wins
+            finalResult = GameResult::Player2Win; //store result
         }
         else { //equal remaining HP
             winner = "Draw"; //game ends in draw
+            finalResult = GameResult::Draw; //store result
         }
 
         gameOver = true; //finish game
@@ -190,8 +306,9 @@ void Game::checkWinner() { //check if game ended
 }
 
 void Game::nextTurn() { //switch to next player
-    if (gameOver) { //check if game finished
-        return; //stop turn switching
+
+    if (gameOver) { //check game status
+        return; //game already finished
     }
 
     turnsCompleted++; //record completed turn
@@ -200,98 +317,101 @@ void Game::nextTurn() { //switch to next player
         currentPlayer = 2; //switch to second player
     }
     else { //second player's turn ended
-        checkWinner(); //check winner after full round
 
-        if (gameOver) { //check if game ended
+        checkWinner(); //check result after full round
+
+        if (gameOver) { //check game status
             return; //stop switching players
         }
 
         currentPlayer = 1; //switch to first player
     }
-
-    removeExpiredShields(); //update shield status
 }
 
 void Game::playTurn() { //handle current player's turn
 
+    removeExpiredShields(); //remove expired own shields
+
     Player& player = getCurrentPlayer(); //get current player
 
-    ui.displayTurn(player.getName()); //show current player
+    ui.displayTurn(player.getName()); //show current turn
 
-    ui.displayComponents(
-        player1.getName(), //first player's name
-        player1.getTotalHP() //first player's HP
-    );
+    ui.displaySystem(player1); //show first player's components
+    ui.displaySystem(player2); //show second player's components
 
-    ui.displayComponents(
-        player2.getName(), //second player's name
-        player2.getTotalHP() //second player's HP
-    );
+    ui.displayCards(player); //show current player's cards
 
-    ui.displayHand(player.getHandSize()); //show player hand
+    ui.displayMessage(
+        "Cards remaining in deck: " +
+        to_string(deck.cardsRemaining())
+    ); //show remaining cards
 
-    bool canDraw =
-        !player.isHandFull() && !deck.isEmpty(); //check draw action
+    while (!gameOver) { //continue until valid action
 
-    bool canPlay = player.hasCards(); //check play action
+        bool canDraw =
+            !player.isHandFull() &&
+            !deck.isEmpty(); //check draw availability
 
-    ui.displayTurnMenu(canDraw, canPlay); //show actions
+        bool canPlay = player.hasCards(); //check play availability
 
-    int choice =
-        ui.getTurnChoice(canDraw, canPlay); //read action
+        if (!canDraw && !canPlay) { //check unavailable actions
+            ui.displayMessage(
+                "No actions available. Turn skipped."
+            ); //show message
 
-    if (choice == 0) { //no action available
-        ui.displayMessage("No actions available."); //show message
-        nextTurn(); //skip turn
-        return; //finish action
-    }
-
-    if (choice == 1) { //player chooses to draw
-        if (drawCard()) { //attempt to draw
-            ui.displayMessage("Card drawn successfully."); //confirm
             nextTurn(); //finish turn
-        }
-        else { //draw failed
-            ui.displayMessage("Cannot draw card."); //show error
+            return; //stop current turn
         }
 
-        return; //finish action
-    }
+        int choice =
+            ui.getTurnChoice(canDraw, canPlay); //read action
 
-    if (choice == 2) { //player chooses to play
-        int cardIndex =
-            ui.getCardChoice(player.getHandSize()); //select card
+        if (choice == 1) { //player chooses to draw
 
-        if (playCard(cardIndex)) { //attempt to play card
-            ui.displayMessage("Card played successfully."); //confirm
-            nextTurn(); //finish turn
+            if (addCard()) { //attempt to draw
+                ui.displayMessage(
+                    "Card drawn successfully."
+                ); //confirm draw
+
+                nextTurn(); //finish turn
+                return; //stop current turn
+            }
+
+            ui.displayMessage(
+                "Cannot draw a card. Try again."
+            ); //show error
         }
-        else { //invalid card
-            ui.displayMessage("Invalid move. Try again."); //show error
-        }
+        else if (choice == 2) { //player chooses to play
 
-        return; //finish action
+            int cardIndex =
+                ui.getCardChoice(
+                    static_cast<int>(player.getHandSize())
+                ); //select card
+
+            if (removeCard(cardIndex)) { //attempt to play card
+
+                ui.displayMessage(
+                    "Card played successfully."
+                ); //confirm play
+
+                nextTurn(); //finish turn
+                return; //stop current turn
+            }
+
+            ui.displayMessage(
+                "Invalid card. Try again."
+            ); //show error
+        }
     }
 }
 
 GameResult Game::getResult() const { //get final game result
+
     if (!gameOver) { //check game status
         throw logic_error("Game is not finished"); //reject request
     }
 
-    if (winner == "Draw") { //check draw
-        return GameResult::Draw; //return draw result
-    }
-
-    if (winner == player1.getName()) { //check first player
-        return GameResult::Player1Win; //return first player win
-    }
-
-    if (winner == player2.getName()) { //check second player
-        return GameResult::Player2Win; //return second player win
-    }
-
-    throw logic_error("Unknown game result"); //reject unknown result
+    return finalResult; //return stored result
 }
 
 GameResult Game::startGame() { //start a new game
@@ -300,32 +420,35 @@ GameResult Game::startGame() { //start a new game
     gameOver = false; //reset game status
     winner = ""; //clear previous winner
     turnsCompleted = 0; //reset turn counter
+    finalResult = GameResult::Draw; //reset result
 
     deck = Deck(); //create fresh deck
     deck.shuffle(); //shuffle cards
 
     for (int i = 0; i < 5; i++) { //deal starting hands
 
-        if (!deck.isEmpty()) { //check remaining cards
-            Card card = deck.drawTopCard(); //draw first card
-            player1.addCard(card); //give card to first player
+        if (!deck.drawCard(player1)) { //deal first player
+            throw logic_error(
+                "Cannot deal first player's hand"
+            ); //report dealing error
         }
 
-        if (!deck.isEmpty()) { //check remaining cards
-            Card card = deck.drawTopCard(); //draw second card
-            player2.addCard(card); //give card to second player
+        if (!deck.drawCard(player2)) { //deal second player
+            throw logic_error(
+                "Cannot deal second player's hand"
+            ); //report dealing error
         }
     }
 
     while (!gameOver) { //continue until game ends
-        playTurn(); //handle current player's action
+        playTurn(); //handle current player's turn
     }
 
-    return getResult(); //return final result to main
+    return getResult(); //return result to main
 }
 
 bool Game::isGameOver() const { //check game status
-    return gameOver; //return true if game finished
+    return gameOver; //return game status
 }
 
 string Game::getWinner() const { //get winning player
